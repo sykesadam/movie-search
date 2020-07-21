@@ -41,30 +41,45 @@ async function search() {
 }
 
 async function appendSearchResult(movies) {
-	let movieResults = document.querySelector(".movie__results");
-	movieResults.innerHTML = "";
-	movies.forEach((movie) => {
-		const movieResult = `<div class="movie" data-id="${movie.imdbID}">
+	let movieElements = document.querySelectorAll(".movie");
+	movieElements.forEach((movie, i) => {
+		movie.style.opacity = 0;
+	});
+
+	setTimeout(() => {
+		const movieResults = document.querySelector(".movie__results");
+		movieResults.innerHTML = "";
+
+		movies.forEach((movie) => {
+			const movieResult = `<div class="movie" data-id="${movie.imdbID}">
 			<div class="movie__card">
-				<img src="${movie.Poster}" />
-				<h1 class="movie__title">${movie.Title} (${movie.Year})</h1>
+			<img src="${movie.Poster}" />
+			<h1 class="movie__title">${movie.Title} (${movie.Year})</h1>
 			</div>
 			<div class="more-info"></div>
 		</div>`;
-		movieResults.innerHTML += movieResult;
-	});
-
-	document.querySelectorAll(".movie").forEach((element) => {
-		element.addEventListener("click", () => {
-			if (!element.classList.contains("open")) {
-				element.classList.add("open");
-				moreInfo(element);
-			} else {
-				element.classList.remove("open");
-				lessInfo(element);
-			}
+			movieResults.innerHTML += movieResult;
 		});
-	});
+		movieElements = document.querySelectorAll(".movie");
+		movieElements.forEach((movie, i) => {
+			setTimeout(() => {
+				movie.style.opacity = 1;
+				movie.style.transform = "translateX(0)";
+			}, 50 * i);
+		});
+
+		document.querySelectorAll(".movie").forEach((element) => {
+			element.addEventListener("click", () => {
+				if (!element.classList.contains("open")) {
+					element.classList.add("open");
+					moreInfo(element);
+				} else {
+					element.classList.remove("open");
+					lessInfo(element);
+				}
+			});
+		});
+	}, 100);
 }
 
 async function moreInfo(element) {
@@ -105,9 +120,6 @@ function lessInfo(element) {
 	}, 100);
 
 	movies.forEach((movie) => (movie.style.transform = "translateY(0)"));
-	setTimeout(() => {
-		movies.forEach((movie) => movie.removeAttribute("style"));
-	}, 400);
 }
 
 document.querySelector(".search-button").addEventListener("click", search);
