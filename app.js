@@ -49,7 +49,6 @@ async function appendSearchResult(movies) {
 	setTimeout(() => {
 		const movieResults = document.querySelector(".movie__results");
 		movieResults.innerHTML = "";
-
 		movies.forEach((movie) => {
 			const movieResult = `<div class="movie" data-id="${movie.imdbID}">
 			<div class="movie__card">
@@ -68,7 +67,7 @@ async function appendSearchResult(movies) {
 			}, 50 * i);
 		});
 
-		document.querySelectorAll(".movie").forEach((element) => {
+		document.querySelectorAll(".movie__card").forEach((element) => {
 			element.addEventListener("click", () => {
 				if (!element.classList.contains("open")) {
 					element.classList.add("open");
@@ -79,11 +78,11 @@ async function appendSearchResult(movies) {
 				}
 			});
 		});
-	}, 100);
+	}, 300);
 }
 
 async function moreInfo(element) {
-	element.style.zIndex = "100";
+	element.parentElement.style.zIndex = "100";
 
 	const movies = document.querySelectorAll(".movie");
 
@@ -92,18 +91,18 @@ async function moreInfo(element) {
 			"translateY(-" + movies[i].offsetTop + "px)";
 	}
 
-	const movieID = element.dataset.id;
+	const movieID = element.parentElement.dataset.id;
 	const data = await getMoviesByID(movieID);
 
 	history.pushState({ search: false }, data.Title, `?movie=${data.Title}`);
 
-	const moreInfo = element.querySelector(".more-info");
+	const moreInfo = element.parentElement.querySelector(".more-info");
 
 	moreInfo.innerHTML = `
 		<p>${data.Plot}</p>
 	`;
 
-	moreInfo.style.display = "inherit";
+	moreInfo.style.display = "initial";
 	setTimeout(() => {
 		moreInfo.classList.add("show");
 	}, 400);
@@ -113,16 +112,17 @@ function lessInfo(element) {
 	history.back();
 
 	const movies = document.querySelectorAll(".movie");
-	const moreInfo = element.querySelector(".more-info");
+	const moreInfo = element.parentElement.querySelector(".more-info");
 	moreInfo.classList.remove("show");
 	setTimeout(() => {
 		moreInfo.style.display = "none";
 	}, 100);
 
 	movies.forEach((movie) => (movie.style.transform = "translateY(0)"));
+	element.parentElement.style.zIndex = "0";
 }
 
-document.querySelector(".search-button").addEventListener("click", search);
+// document.querySelector(".search-button").addEventListener("click", search);
 document.querySelector(".search").addEventListener("keydown", (e) => {
 	if (e.keyCode === 13) search();
 });

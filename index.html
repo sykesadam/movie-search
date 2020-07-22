@@ -4,15 +4,29 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Movie search</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700&family=Lobster&display=swap"
+			rel="stylesheet"
+		/>
 		<link rel="stylesheet" href="reset.css" />
 		<link rel="stylesheet" href="styles.css" />
 	</head>
 	<body>
 		<main>
-			<nav>
-				<input type="text" class="search" />
-				<button class="search-button">Search</button>
-			</nav>
+			<header>
+				<h1 class="title">Filmerian</h1>
+				<nav>
+					<div class="search-content">
+						<input
+							type="text"
+							class="search"
+							placeholder="search"
+						/>
+						<div class="line"></div>
+					</div>
+					<!-- <button class="search-button">></button> -->
+				</nav>
+			</header>
 			<section class="movie__results"></section>
 		</main>
 		<script src="app.js"></script>
