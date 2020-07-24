@@ -1,3 +1,12 @@
+/*
+TODO
+
+-Fixa history grejer.
+-Kanske bättre animation än max height.
+-Lägga till "Watchlist" funktion
+
+*/
+
 async function getMovies(title) {
 	const response = await fetch(
 		`http://www.omdbapi.com/?apikey=e1248c77&s=${title}`
@@ -40,7 +49,7 @@ async function search() {
 	return appendSearchResult(movies);
 }
 
-async function appendSearchResult(movies) {
+function appendSearchResult(movies) {
 	let movieElements = document.querySelectorAll(".movie");
 	movieElements.forEach((movie, i) => {
 		movie.style.opacity = 0;
@@ -98,6 +107,20 @@ async function moreInfo(element) {
 
 	const moreInfo = element.parentElement.querySelector(".more-info");
 
+	const writers = data.Writer.includes(",")
+		? data.Writer.split(",")
+		: console.log("då");
+
+	const printWriters = writers.forEach((c) => {
+		return `
+			<p>
+				${console.log(c)}
+			</p>
+		`;
+	});
+
+	console.log(printWriters);
+
 	moreInfo.innerHTML = `
 	<div class="plot">
 		<h1>Synopsis</h1>
@@ -109,9 +132,9 @@ async function moreInfo(element) {
 		<h1>Director</h1>
 		<p>${data.Director}</p>
 	</div>
-	<div class="creator">
+	<div class="creator creator--writer">
 		<h1>Writer(s)</h1>
-		<p>${data.Writer}</p>
+		${data.Writer}
 	</div>
 	<div class="runtime">
 		<h1>Length</h1>
@@ -121,6 +144,16 @@ async function moreInfo(element) {
 		<h1>Genre</h1>
 		<p>${data.Genre}</p>
 	</div>	
+	<div class="actors">
+		<h1>Actors</h1>
+		<p>${data.Actors}</p>
+	</div>
+	<div class="accolades">
+		<h1>Awards</h1>
+		<p>${data.Awards}</p>
+		<h1 class="accolades--box-office">Box Office</h1>
+		<p>${data.BoxOffice}</p>
+	</div>
 	`;
 
 	moreInfo.style.display = "grid";
@@ -137,10 +170,9 @@ function lessInfo(element) {
 	moreInfo.classList.remove("show");
 	setTimeout(() => {
 		moreInfo.style.display = "none";
-	}, 100);
-
-	movies.forEach((movie) => (movie.style.transform = "translateY(0)"));
-	element.parentElement.style.zIndex = "0";
+		movies.forEach((movie) => (movie.style.transform = "translateY(0)"));
+		element.parentElement.style.zIndex = "0";
+	}, 350);
 }
 
 // document.querySelector(".search-button").addEventListener("click", search);
