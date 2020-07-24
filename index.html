@@ -3,31 +3,33 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Movie search</title>
+		<title>Filmerian</title>
 		<link
-			href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700&family=Lobster&display=swap"
+			href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,100&family=Lobster&display=swap"
 			rel="stylesheet"
 		/>
 		<link rel="stylesheet" href="reset.css" />
 		<link rel="stylesheet" href="styles.css" />
 	</head>
 	<body>
+		<header>
+			<h1 class="title">Filmerian</h1>
+			<nav>
+				<div class="searchbar">
+					<input
+						type="text"
+						class="searchbar__field"
+						placeholder="search"
+					/>
+					<div class="searchbar__dot"></div>
+				</div>
+				<!-- <button class="search-button">></button> -->
+			</nav>
+		</header>
 		<main>
-			<header>
-				<h1 class="title">Filmerian</h1>
-				<nav>
-					<div class="search-content">
-						<input
-							type="text"
-							class="search"
-							placeholder="search"
-						/>
-						<div class="line"></div>
-					</div>
-					<!-- <button class="search-button">></button> -->
-				</nav>
-			</header>
-			<section class="movie__results"></section>
+			<section class="movie__results">
+				<h2>Get info about a movie/series</h2>
+			</section>
 		</main>
 		<script src="app.js"></script>
 	</body>

@@ -26,7 +26,7 @@ window.addEventListener("load", async (event) => {
 });
 
 async function search() {
-	const searchValue = document.querySelector(".search").value;
+	const searchValue = document.querySelector(".searchbar__field").value;
 
 	const data = await getMovies(searchValue);
 	const movies = data.Search;
@@ -50,13 +50,13 @@ async function appendSearchResult(movies) {
 		const movieResults = document.querySelector(".movie__results");
 		movieResults.innerHTML = "";
 		movies.forEach((movie) => {
-			const movieResult = `<div class="movie" data-id="${movie.imdbID}">
+			const movieResult = `<article class="movie" data-id="${movie.imdbID}">
 			<div class="movie__card">
 			<img src="${movie.Poster}" />
 			<h1 class="movie__title">${movie.Title} (${movie.Year})</h1>
 			</div>
 			<div class="more-info"></div>
-		</div>`;
+		</article>`;
 			movieResults.innerHTML += movieResult;
 		});
 		movieElements = document.querySelectorAll(".movie");
@@ -99,13 +99,34 @@ async function moreInfo(element) {
 	const moreInfo = element.parentElement.querySelector(".more-info");
 
 	moreInfo.innerHTML = `
-		<p>${data.Plot}</p>
+	<div class="plot">
+		<h1>Synopsis</h1>
+		<p class="plot__text">${data.Plot}</p>
+	</div>
+	<div class="score score--imdb-rating">${data.imdbRating}</div>
+	<div class="score score--metascore">${data.Metascore}</div>
+	<div class="creator">
+		<h1>Director</h1>
+		<p>${data.Director}</p>
+	</div>
+	<div class="creator">
+		<h1>Writer(s)</h1>
+		<p>${data.Writer}</p>
+	</div>
+	<div class="runtime">
+		<h1>Length</h1>
+		<p>${data.Runtime}</p>
+	</div>
+	<div class="genre">
+		<h1>Genre</h1>
+		<p>${data.Genre}</p>
+	</div>	
 	`;
 
-	moreInfo.style.display = "initial";
+	moreInfo.style.display = "grid";
 	setTimeout(() => {
 		moreInfo.classList.add("show");
-	}, 400);
+	}, 350);
 }
 
 function lessInfo(element) {
@@ -123,7 +144,7 @@ function lessInfo(element) {
 }
 
 // document.querySelector(".search-button").addEventListener("click", search);
-document.querySelector(".search").addEventListener("keydown", (e) => {
+document.querySelector(".searchbar__field").addEventListener("keydown", (e) => {
 	if (e.keyCode === 13) search();
 });
 
