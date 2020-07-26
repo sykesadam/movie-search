@@ -119,11 +119,9 @@ async function moreInfo(element) {
 		if (job === "Screenplay" || job === "Story") return true;
 	});
 
-	console.log(writers);
-
-	// const printWriters = writers.forEach((writer) => {
-	// 	return `<li>${writer.name}</li>`;
-	// });
+	const printWriters = writers.forEach((writer) => {
+		console.log(`<li>${writer.name}</li>`);
+	});
 
 	history.pushState(
 		{ search: false },
@@ -147,9 +145,7 @@ async function moreInfo(element) {
 	<div class="creator creator--writer">
 		<h1>Writer(s)</h1>
 		<ul class="writer-list">
-			${writers.forEach((writer) => {
-				return `<li>${writer.name}</li>`;
-			})}
+			${printWriters}
 		</ul>
 	</div>
 	<div class="runtime">
