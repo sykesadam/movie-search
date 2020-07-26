@@ -14,15 +14,32 @@
 	<body>
 		<header>
 			<h1 class="title">Filmerian</h1>
-			<nav>
-				<div class="searchbar">
-					<input
-						type="text"
-						class="searchbar__field"
-						placeholder="search"
-					/>
-					<div class="searchbar__dot"></div>
-				</div>
+			<nav class="navbar">
+				<form action="/" class="search-form">
+					<div class="search-options">
+						<span>Filter:</span>
+						<label for="movie" class="filter--movie">
+							<input type="radio" id="movie" name="filter" />
+							<span>Movie</span>
+						</label>
+						<label for="show" class="filter--show">
+							<input type="radio" id="show" name="filter" />
+							<span>TV-show</span>
+						</label>
+						<label for="person" class="filter--person">
+							<input type="radio" id="person" name="filter" />
+							<span>Person</span>
+						</label>
+					</div>
+					<div class="searchbar">
+						<input
+							type="text"
+							class="searchbar__field"
+							placeholder="search"
+						/>
+						<div class="searchbar__dot"></div>
+					</div>
+				</form>
 				<!-- <button class="search-button">></button> -->
 			</nav>
 		</header>

@@ -7,18 +7,27 @@ TODO
 
 */
 
-async function getMovies(title) {
+async function getAll(searchword) {
 	const response = await fetch(
-		`http://www.omdbapi.com/?apikey=e1248c77&s=${title}`
+		`https://api.themoviedb.org/3/search/movie?api_key=2426d550977235ca6217917baa94407f&query=${searchword}&page=1`
 	);
 	const data = await response.json();
 
 	return data;
 }
 
-async function getMoviesByID(id) {
+async function getMovieDetails(id) {
 	const response = await fetch(
-		`http://www.omdbapi.com/?apikey=e1248c77&i=${id}`
+		`https://api.themoviedb.org/3/movie/${id}?api_key=2426d550977235ca6217917baa94407f`
+	);
+	const data = await response.json();
+
+	return data;
+}
+
+async function getMovieCredits(id) {
+	const response = await fetch(
+		`https://api.themoviedb.org/3/movie/${id}/credits?api_key=2426d550977235ca6217917baa94407f`
 	);
 	const data = await response.json();
 
@@ -28,17 +37,15 @@ async function getMoviesByID(id) {
 window.addEventListener("load", async (event) => {
 	let params = new URL(document.location).searchParams;
 	if (params.has("search")) {
-		const data = await getMovies(params.get("search"));
-		const movies = data.Search;
-		appendSearchResult(movies);
+		const data = await getAll(params.get("search"));
+		appendSearchResult(data);
 	}
 });
 
 async function search() {
 	const searchValue = document.querySelector(".searchbar__field").value;
 
-	const data = await getMovies(searchValue);
-	const movies = data.Search;
+	const data = await getAll(searchValue);
 
 	history.pushState(
 		{ search: true, value: searchValue },
@@ -46,23 +53,24 @@ async function search() {
 		`?search=${searchValue}`
 	);
 
-	return appendSearchResult(movies);
+	return appendSearchResult(data);
 }
 
-function appendSearchResult(movies) {
+function appendSearchResult(data) {
+	const searchData = data.results;
 	let movieElements = document.querySelectorAll(".movie");
 	movieElements.forEach((movie, i) => {
 		movie.style.opacity = 0;
 	});
-
+	console.log(searchData);
 	setTimeout(() => {
 		const movieResults = document.querySelector(".movie__results");
 		movieResults.innerHTML = "";
-		movies.forEach((movie) => {
-			const movieResult = `<article class="movie" data-id="${movie.imdbID}">
+		searchData.forEach((result) => {
+			const movieResult = `<article class="movie" data-id="${result.id}">
 			<div class="movie__card">
-			<img src="${movie.Poster}" />
-			<h1 class="movie__title">${movie.Title} (${movie.Year})</h1>
+			<img src="https://image.tmdb.org/t/p/w154${result.poster_path}" />
+			<h1 class="movie__title">${result.title} (${result.release_date})</h1>
 			</div>
 			<div class="more-info"></div>
 		</article>`;
@@ -101,61 +109,67 @@ async function moreInfo(element) {
 	}
 
 	const movieID = element.parentElement.dataset.id;
-	const data = await getMoviesByID(movieID);
+	const movieDetails = await getMovieDetails(movieID);
+	const movieCredits = await getMovieCredits(movieID);
 
-	history.pushState({ search: false }, data.Title, `?movie=${data.Title}`);
+	console.log(movieDetails);
+	// console.log(movieCredits);
 
-	const moreInfo = element.parentElement.querySelector(".more-info");
-
-	const writers = data.Writer.includes(",")
-		? data.Writer.split(",")
-		: console.log("då");
-
-	const printWriters = writers.forEach((c) => {
-		return `
-			<p>
-				${console.log(c)}
-			</p>
-		`;
+	const director = movieCredits.crew.find(({ job }) => job === "Director");
+	const writers = movieCredits.crew.filter(({ job }) => {
+		if (job === "Screenplay" || job === "Story") return true;
 	});
 
-	console.log(printWriters);
+	// const printWriters = writers.forEach((writer) => {
+	// 	return `<li>${writer.name}</li>`;
+	// });
+
+	history.pushState(
+		{ search: false },
+		movieDetails.title,
+		`?movie=${movieDetails.title}`
+	);
+
+	const moreInfo = element.parentElement.querySelector(".more-info");
 
 	moreInfo.innerHTML = `
 	<div class="plot">
 		<h1>Synopsis</h1>
-		<p class="plot__text">${data.Plot}</p>
+		<p class="plot__text">${movieDetails.overview}</p>
 	</div>
-	<div class="score score--imdb-rating">${data.imdbRating}</div>
-	<div class="score score--metascore">${data.Metascore}</div>
+	<div class="score score--imdb-rating">${movieDetails.vote_average}</div>
+	<div class="score score--metascore">0.0</div>
 	<div class="creator">
 		<h1>Director</h1>
-		<p>${data.Director}</p>
+		<p>${director.name}</p>
 	</div>
 	<div class="creator creator--writer">
 		<h1>Writer(s)</h1>
-		${data.Writer}
+		<ul class="writer-list">
+			${writers.forEach((writer) => {
+				return `<li>${writer.name}</li>`;
+			})}
+		</ul>
 	</div>
 	<div class="runtime">
 		<h1>Length</h1>
-		<p>${data.Runtime}</p>
+		<p>${movieDetails.runtime}min</p>
 	</div>
 	<div class="genre">
 		<h1>Genre</h1>
-		<p>${data.Genre}</p>
+		<p>GENRE</p>
 	</div>	
 	<div class="actors">
 		<h1>Actors</h1>
-		<p>${data.Actors}</p>
+		<p>Actors</p>
 	</div>
 	<div class="accolades">
 		<h1>Awards</h1>
-		<p>${data.Awards}</p>
+		<p>Awards</p>
 		<h1 class="accolades--box-office">Box Office</h1>
-		<p>${data.BoxOffice}</p>
+		<p>$${movieDetails.revenue}</p>
 	</div>
 	`;
-
 	moreInfo.style.display = "grid";
 	setTimeout(() => {
 		moreInfo.classList.add("show");
@@ -177,34 +191,10 @@ function lessInfo(element) {
 
 // document.querySelector(".search-button").addEventListener("click", search);
 document.querySelector(".searchbar__field").addEventListener("keydown", (e) => {
+	// e.preventDefault();
 	if (e.keyCode === 13) search();
 });
 
-//<h1 class="movie__title">${movie.Title}</h1>
-
-// Actors: "Leonardo DiCaprio, Joseph Gordon-Levitt, Ellen Page, Tom Hardy"
-// Awards: "Won 4 Oscars. Another 152 wins & 217 nominations."
-// BoxOffice: "$292,568,851"
-// Country: "USA, UK"
-// DVD: "07 Dec 2010"
-// Director: "Christopher Nolan"
-// Genre: "Action, Adventure, Sci-Fi, Thriller"
-// Language: "English, Japanese, French"
-// Metascore: "74"
-// Plot: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O."
-// Poster: "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg"
-// Production: "Warner Bros. Pictures"
-// Rated: "PG-13"
-// Ratings: (3) [{…}, {…}, {…}]
-// Released: "16 Jul 2010"
-// Response: "True"
-// Runtime: "148 min"
-// Title: "Inception"
-// Type: "movie"
-// Website: "N/A"
-// Writer: "Christopher Nolan"
-// Year: "2010"
-// imdbID: "tt1375666"
-// imdbRating: "8.8"
-// imdbVotes: "1,980,743"
-// __proto__: Object
+document.querySelector(".search-form").addEventListener("submit", (e) => {
+	e.preventDefault();
+});
