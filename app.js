@@ -62,7 +62,6 @@ function appendSearchResult(data) {
 	movieElements.forEach((movie, i) => {
 		movie.style.opacity = 0;
 	});
-	console.log(searchData);
 	setTimeout(() => {
 		const movieResults = document.querySelector(".movie__results");
 		movieResults.innerHTML = "";
@@ -112,13 +111,15 @@ async function moreInfo(element) {
 	const movieDetails = await getMovieDetails(movieID);
 	const movieCredits = await getMovieCredits(movieID);
 
-	console.log(movieDetails);
+	// console.log(movieDetails);
 	// console.log(movieCredits);
 
 	const director = movieCredits.crew.find(({ job }) => job === "Director");
 	const writers = movieCredits.crew.filter(({ job }) => {
 		if (job === "Screenplay" || job === "Story") return true;
 	});
+
+	console.log(writers);
 
 	// const printWriters = writers.forEach((writer) => {
 	// 	return `<li>${writer.name}</li>`;
