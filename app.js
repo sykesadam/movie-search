@@ -62,6 +62,7 @@ function appendSearchResult(data) {
 	movieElements.forEach((movie, i) => {
 		movie.style.opacity = 0;
 	});
+	console.log(searchData);
 	setTimeout(() => {
 		const movieResults = document.querySelector(".movie__results");
 		movieResults.innerHTML = "";
@@ -97,6 +98,18 @@ function appendSearchResult(data) {
 	}, 300);
 }
 
+function printArr(array, type) {
+	let data = "";
+	if (type === "writers") {
+		array.forEach((a) => (data += `<li>${a.name} (${a.job})</li>`));
+	} else if (type === "cast") {
+		array.forEach((a) => (data += `<li>${a.name} (${a.character})</li>`));
+	} else {
+		array.forEach((a) => (data += `<li>${a.name}</li>`));
+	}
+	return data;
+}
+
 async function moreInfo(element) {
 	element.parentElement.style.zIndex = "100";
 
@@ -111,17 +124,15 @@ async function moreInfo(element) {
 	const movieDetails = await getMovieDetails(movieID);
 	const movieCredits = await getMovieCredits(movieID);
 
-	// console.log(movieDetails);
-	// console.log(movieCredits);
+	console.log(movieDetails);
+	console.log(movieCredits);
 
-	const director = movieCredits.crew.find(({ job }) => job === "Director");
+	const director = movieCredits.crew.filter(({ job }) => job === "Director");
 	const writers = movieCredits.crew.filter(({ job }) => {
-		if (job === "Screenplay" || job === "Story") return true;
+		if (job === "Screenplay" || job === "Story" || job === "Writer")
+			return true;
 	});
-
-	const printWriters = writers.forEach((writer) => {
-		console.log(`<li>${writer.name}</li>`);
-	});
+	const cast = movieCredits.cast.slice(0, 5);
 
 	history.pushState(
 		{ search: false },
@@ -136,16 +147,17 @@ async function moreInfo(element) {
 		<h1>Synopsis</h1>
 		<p class="plot__text">${movieDetails.overview}</p>
 	</div>
-	<div class="score score--imdb-rating">${movieDetails.vote_average}</div>
-	<div class="score score--metascore">0.0</div>
+	<div class="score">${movieDetails.vote_average}</div>
 	<div class="creator">
 		<h1>Director</h1>
-		<p>${director.name}</p>
+		<ul class="list">
+			${printArr(director)}
+		</ul>
 	</div>
 	<div class="creator creator--writer">
 		<h1>Writer(s)</h1>
-		<ul class="writer-list">
-			${printWriters}
+		<ul class="list">
+			${printArr(writers, "writers")}
 		</ul>
 	</div>
 	<div class="runtime">
@@ -154,17 +166,21 @@ async function moreInfo(element) {
 	</div>
 	<div class="genre">
 		<h1>Genre</h1>
-		<p>GENRE</p>
+		<ul class="list">
+			${printArr(movieDetails.genres)}
+		</ul>
 	</div>	
 	<div class="actors">
 		<h1>Actors</h1>
-		<p>Actors</p>
+		<ul class="list">
+			${printArr(cast, "cast")}
+		</ul>
 	</div>
-	<div class="accolades">
-		<h1>Awards</h1>
-		<p>Awards</p>
+	<div class="finances">
+		<h1>Budget</h1>
+		<p>$${movieDetails.budget.toLocaleString("en-GB")}</p>
 		<h1 class="accolades--box-office">Box Office</h1>
-		<p>$${movieDetails.revenue}</p>
+		<p>$${movieDetails.revenue.toLocaleString("en-GB")}</p>
 	</div>
 	`;
 	moreInfo.style.display = "grid";
@@ -188,7 +204,6 @@ function lessInfo(element) {
 
 // document.querySelector(".search-button").addEventListener("click", search);
 document.querySelector(".searchbar__field").addEventListener("keydown", (e) => {
-	// e.preventDefault();
 	if (e.keyCode === 13) search();
 });
 

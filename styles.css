@@ -180,13 +180,19 @@ header {
 	font-size: 0.75rem;
 	margin-bottom: 0.5rem;
 }
-.more-info p {
+.more-info p,
+.list {
 	padding-left: 0.25rem;
 	font-size: 1rem;
 }
 
+.list li {
+	margin: 0.4rem 0;
+}
+
 .plot {
-	grid-area: 1 / 1 / 2 / 3;
+	grid-area: 1 / 1 / 2 / 4;
+	line-height: 20px;
 }
 
 .creator--writer {
@@ -199,22 +205,17 @@ header {
 	justify-content: center;
 	align-items: center;
 	font-family: var(--font-heading);
-}
-.score--imdb-rating {
-	background: #e2b616;
-}
-.score--metascore {
 	background: #66cc33;
 }
 
 .actors {
 	grid-area: 3 / 3 / 3 / 3;
 }
-.accolades {
+.finances {
 	grid-area: 3 / 4 / 4 / 4;
 }
 
-.accolades .accolades--box-office {
+.finances .accolades--box-office {
 	margin-top: 2rem;
 }
 
