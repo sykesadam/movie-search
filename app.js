@@ -7,9 +7,38 @@ TODO
 
 */
 
-async function getAll(searchword) {
+async function getResult(searchword) {
+	const movie = document.querySelector("#movie").checked,
+		show = document.querySelector("#show").checked,
+		person = document.querySelector("#person").checked;
+	let data;
+
+	if (movie) return (data = await getMovies(searchword));
+	if (show) return (data = await getTVShows(searchword));
+	if (person) return (data = await getPeople(searchword));
+}
+
+async function getMovies(searchword) {
 	const response = await fetch(
 		`https://api.themoviedb.org/3/search/movie?api_key=2426d550977235ca6217917baa94407f&query=${searchword}&page=1`
+	);
+	const data = await response.json();
+
+	return data;
+}
+
+async function getTVShows(searchword) {
+	const response = await fetch(
+		`https://api.themoviedb.org/3/search/tv?api_key=2426d550977235ca6217917baa94407f&page=1&query=${searchword}`
+	);
+	const data = await response.json();
+
+	return data;
+}
+
+async function getPeople(searchword) {
+	const response = await fetch(
+		`https://api.themoviedb.org/3/search/person?api_key=2426d550977235ca6217917baa94407f&page=1&query=${searchword}`
 	);
 	const data = await response.json();
 
@@ -37,7 +66,7 @@ async function getMovieCredits(id) {
 window.addEventListener("load", async (event) => {
 	let params = new URL(document.location).searchParams;
 	if (params.has("search")) {
-		const data = await getAll(params.get("search"));
+		const data = await getResult(params.get("search"));
 		appendSearchResult(data);
 	}
 });
@@ -45,7 +74,7 @@ window.addEventListener("load", async (event) => {
 async function search() {
 	const searchValue = document.querySelector(".searchbar__field").value;
 
-	const data = await getAll(searchValue);
+	const data = await getResult(searchValue);
 
 	history.pushState(
 		{ search: true, value: searchValue },
@@ -64,12 +93,12 @@ function appendSearchResult(data) {
 	});
 	console.log(searchData);
 	setTimeout(() => {
-		const movieResults = document.querySelector(".movie__results");
+		const movieResults = document.querySelector(".results");
 		movieResults.innerHTML = "";
 		searchData.forEach((result) => {
 			const movieResult = `<article class="movie" data-id="${result.id}">
 			<div class="movie__card">
-			<img src="https://image.tmdb.org/t/p/w154${result.poster_path}" />
+			<img src="https://image.tmdb.org/t/p/w154${result.poster_path}" loading="lazy" alt="${result.title} poster" />
 			<h1 class="movie__title">${result.title} (${result.release_date})</h1>
 			</div>
 			<div class="more-info"></div>
@@ -144,43 +173,45 @@ async function moreInfo(element) {
 
 	moreInfo.innerHTML = `
 	<div class="plot">
-		<h1>Synopsis</h1>
+		<h2>Synopsis</h2>
 		<p class="plot__text">${movieDetails.overview}</p>
 	</div>
 	<div class="score">${movieDetails.vote_average}</div>
 	<div class="creator">
-		<h1>Director</h1>
+		<h2>Director</h2>
 		<ul class="list">
 			${printArr(director)}
 		</ul>
 	</div>
 	<div class="creator creator--writer">
-		<h1>Writer(s)</h1>
+		<h2>Writer(s)</h2>
 		<ul class="list">
 			${printArr(writers, "writers")}
 		</ul>
 	</div>
 	<div class="runtime">
-		<h1>Length</h1>
+		<h2>Length</h2>
 		<p>${movieDetails.runtime}min</p>
 	</div>
 	<div class="genre">
-		<h1>Genre</h1>
+		<h2>Genre</h2>
 		<ul class="list">
 			${printArr(movieDetails.genres)}
 		</ul>
 	</div>	
 	<div class="actors">
-		<h1>Actors</h1>
+		<h2>Actors</h2>
 		<ul class="list">
 			${printArr(cast, "cast")}
 		</ul>
 	</div>
 	<div class="finances">
-		<h1>Budget</h1>
-		<p>$${movieDetails.budget.toLocaleString("en-GB")}</p>
-		<h1 class="accolades--box-office">Box Office</h1>
-		<p>$${movieDetails.revenue.toLocaleString("en-GB")}</p>
+		<h2>Budget</h2>
+		<p class="finances--budget">$${movieDetails.budget.toLocaleString("en-GB")}</p>
+		<h2 class="finances__title--box-office">Box Office</h2>
+		<p class="finances--box-office">$${movieDetails.revenue.toLocaleString(
+			"en-GB"
+		)}</p>
 	</div>
 	`;
 	moreInfo.style.display = "grid";
