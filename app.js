@@ -16,7 +16,7 @@ function setSearchHistory(searchValue, type) {
 
 function setItemHistory(details, type) {
 	let title;
-	if (type === "tv") title = details.name;
+	if (type === "tv" || type === "person") title = details.name;
 	if (type === "movie") title = details.title;
 
 	history.pushState(
@@ -74,7 +74,7 @@ function appendResults(data, type) {
 			setTimeout(() => {
 				item.style.opacity = 1;
 				item.style.transform = "translateX(0)";
-			}, 75 * i);
+			}, 100 * i);
 		});
 
 		document.querySelectorAll(".card").forEach((element) => {
@@ -83,14 +83,14 @@ function appendResults(data, type) {
 					element.classList.add("open");
 					if (type === "movie") movieInfo(type, element);
 					if (type === "tv") tvInfo(type, element);
-					if (type === "person") movieInfo(type, element);
+					if (type === "person") personInfo(type, element);
 				} else {
 					element.classList.remove("open");
 					lessInfo(element);
 				}
 			});
 		});
-	}, 300);
+	}, 400);
 }
 
 function movieItems(data) {
@@ -291,7 +291,55 @@ async function tvInfo(type, element) {
 	}, 350);
 }
 
-// tvInfo, personInfo
+function personInfo(type, element) {
+	animateOutCards(element);
+
+	const id = element.parentElement.dataset.id;
+	const personDetails = await getPersonDetails(id);
+
+	const tvCredits = await getTVShowCredits(id);
+
+	console.log(personDetails);
+
+	setItemHistory(personDetails, type);
+
+	const moreInfo = element.parentElement.querySelector(".more-info");
+
+	moreInfo.innerHTML = `
+	<div class="plot">
+		<h2>Synopsis</h2>
+		<p class="plot__text">${tvDetails.overview}</p>
+	</div>
+	<div class="score">${tvDetails.vote_average}</div>
+	<div class="creator">
+		<h2>Creators</h2>
+		<ul class="list">
+			${printArr(tvDetails.created_by)}
+		</ul>
+	</div>
+	<div class="runtime">
+		<h2>Length</h2>
+		<p>${tvDetails.episode_run_time} min</p>
+	</div>
+	<div class="genre">
+		<h2>Genre</h2>
+		<ul class="list">
+			${printArr(tvDetails.genres)}
+		</ul>
+	</div>	
+	<div class="actors">
+		<h2>Actors</h2>
+		<ul class="list">
+			${printArr(cast, "cast")}
+		</ul>
+	</div>
+	`;
+
+	moreInfo.style.display = "grid";
+	setTimeout(() => {
+		moreInfo.classList.add("show");
+	}, 350);
+}
 
 function lessInfo(element) {
 	history.back();
@@ -400,6 +448,7 @@ window.addEventListener("DOMContentLoaded", async function (e) {
 	return startpage();
 });
 
+// ful ful kod, göra nåt bättre med dessa detaljvyer förmodligen
 async function tvShowDetailsView(data) {
 	const results = document.querySelector(".results");
 	const tvCredits = await getTVShowCredits(data.id);
@@ -567,6 +616,14 @@ async function getTVShowCredits(id) {
 async function getPeople(searchword) {
 	const response = await fetch(
 		`https://api.themoviedb.org/3/search/person?api_key=${apiKey}&page=1&query=${searchword}`
+	);
+	const data = await response.json();
+	return data;
+}
+
+async function getPersonDetails(id) {
+	const response = await fetch(
+		`https://api.themoviedb.org/3/person/${id}?api_key=${apiKey}`
 	);
 	const data = await response.json();
 	return data;
