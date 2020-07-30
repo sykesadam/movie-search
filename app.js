@@ -6,11 +6,23 @@ TODO
 -Lägga till "Watchlist" funktion
 
 */
-function setHistory(searchValue, type) {
+function setSearchHistory(searchValue, type) {
 	history.pushState(
 		{ searchValue, type },
 		searchValue,
 		`?t=${type}&s=${searchValue}`
+	);
+}
+
+function setItemHistory(details, type) {
+	let title;
+	if (type === "tv") title = details.name;
+	if (type === "movie") title = details.title;
+
+	history.pushState(
+		{ details, type },
+		details.title,
+		`?${type}=${title}&id=${details.id}`
 	);
 }
 
@@ -26,22 +38,23 @@ async function getResult(urlQuery) {
 
 	if (movie) {
 		data = await getMovies(searchValue);
-		setHistory(searchValue, "movie");
+		setSearchHistory(searchValue, "movie");
 		return appendResults(data, "movie");
 	}
 	if (show) {
 		data = await getTVShows(searchValue);
-		setHistory(searchValue, "tv");
+		setSearchHistory(searchValue, "tv");
 		return appendResults(data, "tv");
 	}
 	if (person) {
 		data = await getPeople(searchValue);
-		setHistory(searchValue, "person");
+		setSearchHistory(searchValue, "person");
 		return appendResults(data, "person");
 	}
 }
 
 function appendResults(data, type) {
+	console.log(data);
 	const searchData = data.results;
 	let items = document.querySelectorAll(".item");
 	items.forEach((item, i) => {
@@ -52,9 +65,9 @@ function appendResults(data, type) {
 		const results = document.querySelector(".results");
 		results.innerHTML = "";
 
-		if (type == "movie") results.innerHTML = movieItems(searchData);
-		if (type == "tv") results.innerHTML = tvItems(searchData);
-		if (type == "person") results.innerHTML = personItems(searchData);
+		if (type === "movie") results.innerHTML = movieItems(searchData);
+		if (type === "tv") results.innerHTML = tvItems(searchData);
+		if (type === "person") results.innerHTML = personItems(searchData);
 
 		items = document.querySelectorAll(".item");
 		items.forEach((item, i) => {
@@ -68,7 +81,9 @@ function appendResults(data, type) {
 			element.addEventListener("click", () => {
 				if (!element.classList.contains("open")) {
 					element.classList.add("open");
-					movieInfo(element);
+					if (type === "movie") movieInfo(type, element);
+					if (type === "tv") tvInfo(type, element);
+					if (type === "person") movieInfo(type, element);
 				} else {
 					element.classList.remove("open");
 					lessInfo(element);
@@ -142,7 +157,7 @@ function printArr(array, type) {
 	return data;
 }
 
-async function movieInfo(element) {
+function animateOutCards(element) {
 	element.parentElement.style.zIndex = "100";
 
 	const movies = document.querySelectorAll(".item");
@@ -151,14 +166,17 @@ async function movieInfo(element) {
 		movies[i].style.transform =
 			"translateY(-" + movies[i].offsetTop + "px)";
 	}
+}
 
-	// separat detailsView funktion, förmodligen moviedetails, tvdetails osv
-	const movieID = element.parentElement.dataset.id;
-	const movieDetails = await getMovieDetails(movieID);
-	const movieCredits = await getMovieCredits(movieID);
+async function movieInfo(type, element) {
+	animateOutCards(element);
 
-	console.log(movieDetails);
-	console.log(movieCredits);
+	const id = element.parentElement.dataset.id;
+	const movieDetails = await getMovieDetails(id);
+	const movieCredits = await getMovieCredits(id);
+
+	// console.log(movieDetails);
+	// console.log(movieCredits);
 
 	const director = movieCredits.crew.filter(({ job }) => job === "Director");
 	const writers = movieCredits.crew.filter(({ job }) => {
@@ -167,11 +185,7 @@ async function movieInfo(element) {
 	});
 	const cast = movieCredits.cast.slice(0, 5);
 
-	history.pushState(
-		{ search: false, detailView: true },
-		movieDetails.title,
-		`?movie=${movieDetails.title}&id=${movieDetails.id}`
-	);
+	setItemHistory(movieDetails, type);
 
 	const moreInfo = element.parentElement.querySelector(".more-info");
 
@@ -218,11 +232,66 @@ async function movieInfo(element) {
 		)}</p>
 	</div>
 	`;
+
 	moreInfo.style.display = "grid";
 	setTimeout(() => {
 		moreInfo.classList.add("show");
 	}, 350);
 }
+
+async function tvInfo(type, element) {
+	animateOutCards(element);
+
+	const id = element.parentElement.dataset.id;
+	const tvDetails = await getTVShowDetails(id);
+
+	const tvCredits = await getTVShowCredits(id);
+
+	console.log(tvCredits.cast);
+
+	const cast = tvCredits.cast.slice(0, 5);
+
+	setItemHistory(tvDetails, type);
+
+	const moreInfo = element.parentElement.querySelector(".more-info");
+
+	moreInfo.innerHTML = `
+	<div class="plot">
+		<h2>Synopsis</h2>
+		<p class="plot__text">${tvDetails.overview}</p>
+	</div>
+	<div class="score">${tvDetails.vote_average}</div>
+	<div class="creator">
+		<h2>Creators</h2>
+		<ul class="list">
+			${printArr(tvDetails.created_by)}
+		</ul>
+	</div>
+	<div class="runtime">
+		<h2>Length</h2>
+		<p>${tvDetails.episode_run_time} min</p>
+	</div>
+	<div class="genre">
+		<h2>Genre</h2>
+		<ul class="list">
+			${printArr(tvDetails.genres)}
+		</ul>
+	</div>	
+	<div class="actors">
+		<h2>Actors</h2>
+		<ul class="list">
+			${printArr(cast, "cast")}
+		</ul>
+	</div>
+	`;
+
+	moreInfo.style.display = "grid";
+	setTimeout(() => {
+		moreInfo.classList.add("show");
+	}, 350);
+}
+
+// tvInfo, personInfo
 
 function lessInfo(element) {
 	history.back();
@@ -322,34 +391,134 @@ window.addEventListener("DOMContentLoaded", async function (e) {
 	if (params.has("id")) {
 		const data = await getMovieDetails(params.get("id"));
 
-		// return detailsView(data);
-
-		console.log(data);
+		if (params.has("movie")) return movieDetailsView(data);
+		if (params.has("tv"))
+			return tvShowDetailsView(await getTVShowDetails(params.get("id")));
+		if (params.has("person")) console.log("snart");
 	}
 
 	return startpage();
 });
 
+async function tvShowDetailsView(data) {
+	const results = document.querySelector(".results");
+	const tvCredits = await getTVShowCredits(data.id);
+
+	const cast = tvCredits.cast.slice(0, 5);
+
+	results.innerHTML = `
+	<article class="item item--tv" data-id="${
+		data.id
+	}"  style="opacity: 1; transform: translateY(0);">
+		<div class="card card--tv">
+			<img src="${
+				data.poster_path == undefined
+					? "https://via.placeholder.com/100x150"
+					: "https://image.tmdb.org/t/p/w154" + data.poster_path
+			}" loading="lazy" alt="${data.title} poster" />
+			<h1 class="card__title">${data.name} (${data.first_air_date})</h1>
+		</div>
+		<div class="more-info show" style="display: grid;">
+			<div class="plot">
+				<h2>Synopsis</h2>
+				<p class="plot__text">${data.overview}</p>
+			</div>
+			<div class="score">${data.vote_average}</div>
+			<div class="creator">
+				<h2>Creators</h2>
+				<ul class="list">
+					${printArr(data.created_by)}
+				</ul>
+			</div>
+			<div class="runtime">
+				<h2>Length</h2>
+				<p>${data.episode_run_time} min</p>
+			</div>
+			<div class="genre">
+				<h2>Genre</h2>
+				<ul class="list">
+					${printArr(data.genres)}
+				</ul>
+			</div>	
+			<div class="actors">
+				<h2>Actors</h2>
+				<ul class="list">
+					${printArr(cast, "cast")}
+				</ul>
+			</div>
+		</div>
+	</article>`;
+}
+
+async function movieDetailsView(data) {
+	const results = document.querySelector(".results");
+	const movieCredits = await getMovieCredits(data.id);
+
+	const director = movieCredits.crew.filter(({ job }) => job === "Director");
+	const writers = movieCredits.crew.filter(({ job }) => {
+		if (job === "Screenplay" || job === "Story" || job === "Writer")
+			return true;
+	});
+	const cast = movieCredits.cast.slice(0, 5);
+
+	results.innerHTML = `<article class="item item--movie" data-id="${
+		data.id
+	}" style="opacity: 1; transform: translateY(0);">
+				<div class="card card--movie open">
+					<img src="https://image.tmdb.org/t/p/w154${
+						data.poster_path
+					}" loading="lazy" alt="${data.title} poster" />
+					<h1 class="card__title">${data.title} (${data.release_date})</h1>
+				</div>
+				<div class="more-info show" style="display: grid;">
+	<div class="plot">
+		<h2>Synopsis</h2>
+		<p class="plot__text">${data.overview}</p>
+	</div>
+	<div class="score">${data.vote_average}</div>
+	<div class="creator">
+		<h2>Director</h2>
+		<ul class="list">
+			${printArr(director)}
+		</ul>
+	</div>
+	<div class="creator creator--writer">
+		<h2>Writer(s)</h2>
+		<ul class="list">
+			${printArr(writers, "writers")}
+		</ul>
+	</div>
+	<div class="runtime">
+		<h2>Length</h2>
+		<p>${data.runtime}min</p>
+	</div>
+	<div class="genre">
+		<h2>Genre</h2>
+		<ul class="list">
+			${printArr(data.genres)}
+		</ul>
+	</div>	
+	<div class="actors">
+		<h2>Actors</h2>
+		<ul class="list">
+			${printArr(cast, "cast")}
+		</ul>
+	</div>
+	<div class="finances">
+		<h2>Budget</h2>
+		<p class="finances--budget">$${data.budget.toLocaleString("en-GB")}</p>
+		<h2 class="finances__title--box-office">Box Office</h2>
+		<p class="finances--box-office">$${data.revenue.toLocaleString("en-GB")}</p>
+	</div>
+	</article>`;
+}
+
 // API REQUESTS
+const apiKey = "2426d550977235ca6217917baa94407f";
+
 async function getMovies(searchword) {
 	const response = await fetch(
-		`https://api.themoviedb.org/3/search/movie?api_key=2426d550977235ca6217917baa94407f&query=${searchword}&page=1`
-	);
-	const data = await response.json();
-	return data;
-}
-
-async function getTVShows(searchword) {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/search/tv?api_key=2426d550977235ca6217917baa94407f&page=1&query=${searchword}`
-	);
-	const data = await response.json();
-	return data;
-}
-
-async function getPeople(searchword) {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/search/person?api_key=2426d550977235ca6217917baa94407f&page=1&query=${searchword}`
+		`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${searchword}&page=1`
 	);
 	const data = await response.json();
 	return data;
@@ -357,7 +526,7 @@ async function getPeople(searchword) {
 
 async function getMovieDetails(id) {
 	const response = await fetch(
-		`https://api.themoviedb.org/3/movie/${id}?api_key=2426d550977235ca6217917baa94407f`
+		`https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}`
 	);
 	const data = await response.json();
 	return data;
@@ -365,7 +534,39 @@ async function getMovieDetails(id) {
 
 async function getMovieCredits(id) {
 	const response = await fetch(
-		`https://api.themoviedb.org/3/movie/${id}/credits?api_key=2426d550977235ca6217917baa94407f`
+		`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${apiKey}`
+	);
+	const data = await response.json();
+	return data;
+}
+
+async function getTVShows(searchword) {
+	const response = await fetch(
+		`https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&page=1&query=${searchword}`
+	);
+	const data = await response.json();
+	return data;
+}
+
+async function getTVShowDetails(id) {
+	const response = await fetch(
+		`https://api.themoviedb.org/3/tv/${id}?api_key=${apiKey}`
+	);
+	const data = await response.json();
+	return data;
+}
+
+async function getTVShowCredits(id) {
+	const response = await fetch(
+		`https://api.themoviedb.org/3/tv/${id}/credits?api_key=${apiKey}`
+	);
+	const data = await response.json();
+	return data;
+}
+
+async function getPeople(searchword) {
+	const response = await fetch(
+		`https://api.themoviedb.org/3/search/person?api_key=${apiKey}&page=1&query=${searchword}`
 	);
 	const data = await response.json();
 	return data;
