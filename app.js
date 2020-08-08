@@ -54,7 +54,6 @@ async function getResult(urlQuery) {
 }
 
 function appendResults(data, type) {
-	console.log(data);
 	const searchData = data.results;
 	let items = document.querySelectorAll(".item");
 	items.forEach((item, i) => {
@@ -95,6 +94,7 @@ function appendResults(data, type) {
 
 function movieItems(data) {
 	let content = "";
+
 	data.forEach((result) => {
 		content += `<article class="item item--movie" data-id="${result.id}">
 				<div class="card card--movie">
@@ -108,6 +108,7 @@ function movieItems(data) {
 }
 
 function tvItems(data) {
+	console.log(data);
 	let content = "";
 	data.forEach((result) => {
 		content += `<article class="item item--tv" data-id="${result.id}">
@@ -151,6 +152,15 @@ function printArr(array, type) {
 		array.forEach((a) => (data += `<li>${a.name} (${a.job})</li>`));
 	} else if (type === "cast") {
 		array.forEach((a) => (data += `<li>${a.name} (${a.character})</li>`));
+	} else if (type === "season") {
+		array.forEach((a) => {
+			data += `
+				<li class="episode">Episode ${a.episode_number}</li>
+				<div class="episode-info">
+					<p>${a.overview}</p>
+				</div>
+			`;
+		});
 	} else {
 		array.forEach((a) => (data += `<li>${a.name}</li>`));
 	}
@@ -283,6 +293,12 @@ async function tvInfo(type, element) {
 			${printArr(cast, "cast")}
 		</ul>
 	</div>
+	<div class="seasons">
+		<h2>Seasons</h2>
+		<ul class="list">
+			${printArr(tvDetails.seasons)}
+		</ul>
+	</div>
 	`;
 
 	moreInfo.style.display = "grid";
@@ -291,7 +307,7 @@ async function tvInfo(type, element) {
 	}, 350);
 }
 
-function personInfo(type, element) {
+async function personInfo(type, element) {
 	animateOutCards(element);
 
 	const id = element.parentElement.dataset.id;
@@ -354,33 +370,14 @@ function lessInfo(element) {
 	}, 350);
 }
 
-// document.querySelector(".search-button").addEventListener("click", search);
-document.querySelector(".searchbar__field").addEventListener("keydown", (e) => {
-	if (e.keyCode === 13) getResult();
-});
+// document.querySelector(".searchbar__field").addEventListener("keydown", (e) => {
+// 	if (e.keyCode === 13) getResult();
+// });
 
 document.querySelector(".search-form").addEventListener("submit", (e) => {
 	e.preventDefault();
+	getResult();
 });
-
-// Startpage
-
-async function getPopularMovies() {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/movie/popular?api_key=2426d550977235ca6217917baa94407f&page=1`
-	);
-	const data = await response.json();
-
-	return data;
-}
-async function getPopularTVShows() {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/tv/popular?api_key=2426d550977235ca6217917baa94407f&page=1`
-	);
-	const data = await response.json();
-
-	return data;
-}
 
 async function startpage() {
 	let popularMoviesData = await getPopularMovies();
@@ -413,7 +410,7 @@ async function startpage() {
 	});
 }
 
-window.addEventListener("DOMContentLoaded", async function (e) {
+async function loadContent() {
 	let params = new URL(document.location).searchParams;
 
 	if (params.has("t")) {
@@ -428,32 +425,40 @@ window.addEventListener("DOMContentLoaded", async function (e) {
 				document.querySelector("#person").checked = true;
 				break;
 		}
-
-		const data = await getResult(params.get("s"));
 		document.querySelector(".searchbar__field").value = params.get(
 			"search"
 		);
-
-		return appendResults(data, params.get("t"));
+		return getResult(params.get("s"));
 	}
 	if (params.has("id")) {
-		const data = await getMovieDetails(params.get("id"));
-
-		if (params.has("movie")) return movieDetailsView(data);
-		if (params.has("tv"))
+		if (params.has("movie")) {
+			document.querySelector("#movie").checked = true;
+			return movieDetailsView(await getMovieDetails(params.get("id")));
+		}
+		if (params.has("tv")) {
+			document.querySelector("#show").checked = true;
 			return tvShowDetailsView(await getTVShowDetails(params.get("id")));
-		if (params.has("person")) console.log("snart");
+		}
+		if (params.has("person")) {
+			document.querySelector("#person").checked = true;
+			console.log("snart");
+		}
 	}
 
 	return startpage();
-});
+}
 
-// ful ful kod, göra nåt bättre med dessa detaljvyer förmodligen
+window.addEventListener("DOMContentLoaded", loadContent);
+window.addEventListener("popstate", loadContent);
+
 async function tvShowDetailsView(data) {
 	const results = document.querySelector(".results");
 	const tvCredits = await getTVShowCredits(data.id);
 
 	const cast = tvCredits.cast.slice(0, 5);
+
+	const season = await getTVShowEpisodes(data.id, 1);
+	console.log(season);
 
 	results.innerHTML = `
 	<article class="item item--tv" data-id="${
@@ -495,8 +500,29 @@ async function tvShowDetailsView(data) {
 					${printArr(cast, "cast")}
 				</ul>
 			</div>
+			<div class="seasons">
+				<h2>Seasons</h2>
+				<ul class="list">
+					${printArr(data.seasons)}
+				</ul>
+			</div>
+			<div class="episodes">
+				<h2>${season.name}</h2>
+				<ul class="list">
+					${printArr(season.episodes, "season")}
+				</ul>
+			</div>
 		</div>
 	</article>`;
+	const episodes = document.querySelectorAll(".episode");
+	episodes.forEach((episode) =>
+		episode.addEventListener("click", () => {
+			episodes.forEach((episode) =>
+				episode.classList.remove("show-episode")
+			);
+			episode.classList.add("show-episode");
+		})
+	);
 }
 
 async function movieDetailsView(data) {
@@ -560,71 +586,4 @@ async function movieDetailsView(data) {
 		<p class="finances--box-office">$${data.revenue.toLocaleString("en-GB")}</p>
 	</div>
 	</article>`;
-}
-
-// API REQUESTS
-const apiKey = "2426d550977235ca6217917baa94407f";
-
-async function getMovies(searchword) {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${searchword}&page=1`
-	);
-	const data = await response.json();
-	return data;
-}
-
-async function getMovieDetails(id) {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}`
-	);
-	const data = await response.json();
-	return data;
-}
-
-async function getMovieCredits(id) {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${apiKey}`
-	);
-	const data = await response.json();
-	return data;
-}
-
-async function getTVShows(searchword) {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&page=1&query=${searchword}`
-	);
-	const data = await response.json();
-	return data;
-}
-
-async function getTVShowDetails(id) {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/tv/${id}?api_key=${apiKey}`
-	);
-	const data = await response.json();
-	return data;
-}
-
-async function getTVShowCredits(id) {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/tv/${id}/credits?api_key=${apiKey}`
-	);
-	const data = await response.json();
-	return data;
-}
-
-async function getPeople(searchword) {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/search/person?api_key=${apiKey}&page=1&query=${searchword}`
-	);
-	const data = await response.json();
-	return data;
-}
-
-async function getPersonDetails(id) {
-	const response = await fetch(
-		`https://api.themoviedb.org/3/person/${id}?api_key=${apiKey}`
-	);
-	const data = await response.json();
-	return data;
 }

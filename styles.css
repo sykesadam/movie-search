@@ -248,6 +248,14 @@ header {
 	max-height: 1000px;
 }
 
+.episode-info {
+	display: none;
+}
+
+.show-episode + .episode-info {
+	display: initial;
+}
+
 @media screen and (max-width: 600px) {
 	.more-info {
 		grid-template: repeat(3, auto) / 1fr 1fr;
